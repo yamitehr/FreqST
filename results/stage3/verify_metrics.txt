@@ -1,0 +1,19 @@
+Stage 3 verification + wide-span controls -- HARD regime, seeds [10, 20, 30]
+Reported accuracy = FINAL-epoch model on test (same rule for every method;
+no best-epoch/early-stopping selection). B_best = best test acc over epochs,
+shown only to check whether the noisy pan curve inflates the final number.
+chance = 0.25
+
+method                            A static   B pan (final)   B pan (best)  drop A->B
+RGB (1 frame)                 0.258+/-0.021    0.224+/-0.012        0.275      0.034
+GrayST (3f, consecutive)      0.993+/-0.010    0.316+/-0.059        0.343      0.677
+GrayST-wide (3f, span 8)      1.000+/-0.000    0.306+/-0.046        0.326      0.694
+TC Reordering (3f, span 8)    1.000+/-0.000    0.306+/-0.046        0.326      0.694
+TC-wide (3f, span 12)         1.000+/-0.000    0.352+/-0.027        0.383      0.648
+Temporal avg (8f)             0.386+/-0.051    0.579+/-0.016        0.579     -0.193
+FreqST (8f DCT)               1.000+/-0.000    0.903+/-0.013        0.914      0.097
+
+FreqST on Dataset B, per seed -- final vs best epoch:
+  seed 10: final=0.915  best=0.938
+  seed 20: final=0.890  best=0.890
+  seed 30: final=0.905  best=0.915

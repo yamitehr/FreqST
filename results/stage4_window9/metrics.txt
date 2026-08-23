@@ -1,0 +1,11 @@
+Stage 4 -- same-window (T=9) fairness check, hard regime, single seed
+Same underlying clips as stage3.py's hard regime (same build_dataset seeds),
+re-sliced to a 9-frame window for every method. chance=0.25
+
+method                                  frames used               A(static)    B(pan)  drop A->B
+RGB (1 frame, no window)                1 (mid frame; window ignored)      0.242     0.242      0.000
+GrayST (3f of 9, consecutive)           3 of 9 (6 discarded)          1.000     0.280      0.720
+TC Reordering (3f of 9, spread)         3 of 9 (6 discarded)          1.000     0.280      0.720
+Chunk-avg (3 groups of 9, none dropped) 9 of 9 (0 discarded)          1.000     0.640      0.360
+Temporal avg (9f)                       9 of 9 (0 discarded)          0.335     0.535     -0.200
+FreqST (9f DCT)                         9 of 9 (0 discarded)          1.000     0.875      0.125

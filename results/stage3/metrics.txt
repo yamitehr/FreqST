@@ -1,0 +1,23 @@
+Stage 3 results
+
+===== EASY REGIME =====
+blob_intensity=0.7, sigma=3.0, noise=0.03, base_ch=16, n_train=2000, epochs=16, pan~U(2.0, 4.0)
+Test accuracy (4-class direction, chance=0.25):
+method            A(static)    B(pan)  drop A->B
+RGB (1-frame)         0.247     0.270     -0.023
+GrayST                1.000     1.000      0.000
+TC Reordering         1.000     1.000      0.000
+FreqST                1.000     1.000      0.000
+FreqST window-size sensitivity (Dataset A): W=4:1.000, W=8:1.000, W=12:1.000
+
+===== HARD REGIME =====
+blob_intensity=0.3, sigma=2.0, noise=0.06, base_ch=8, n_train=1000, epochs=22, pan~U(3.0, 6.0)
+Test accuracy (4-class direction, chance=0.25):
+method            A(static)    B(pan)  drop A->B
+RGB (1-frame)         0.242     0.242      0.000
+GrayST                1.000     0.280      0.720
+TC Reordering         1.000     0.220      0.780
+FreqST                1.000     0.887      0.113
+FreqST window-size sensitivity (Dataset A): W=4:1.000, W=8:1.000, W=12:1.000
+
+Total runtime: 226s

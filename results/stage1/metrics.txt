@@ -1,0 +1,8 @@
+Stage 1 results
+Speeds tested for quantification: [0, 1, 2, 3, 4, 5, 6, 7, 8]
+ch1 (low-freq AC) activations: [np.float32(0.0), np.float32(0.1491), np.float32(0.1917), np.float32(0.1863), np.float32(0.1692), np.float32(0.1525), np.float32(0.1372), np.float32(0.1235), np.float32(0.1133)]
+ch2 (higher-freq AC) activations: [np.float32(0.0), np.float32(0.0442), np.float32(0.1006), np.float32(0.1285), np.float32(0.1354), np.float32(0.1319), np.float32(0.1237), np.float32(0.1147), np.float32(0.1071)]
+fraction of total AC energy in ch1+ch2: [np.float32(0.0), np.float32(0.991), np.float32(0.964), np.float32(0.878), np.float32(0.769), np.float32(0.669), np.float32(0.583), np.float32(0.511), np.float32(0.453)]
+ch1/ch2 monotonically increasing over in-regime speeds [0, 1, 2, 3]: False / True
+ch1/ch2 monotonically increasing over FULL tested range [0, 1, 2, 3, 4, 5, 6, 7, 8]: False / False
+Note: activation rises then falls at high speed because, with a fixed 8-frame window, fast motion pushes energy into DCT coefficients beyond the 3 FreqST keeps (see captured_fraction dropping) -- not because there's less total motion energy. This is an aliasing-like effect: window length bounds the motion speeds FreqST's first few coefficients can resolve.

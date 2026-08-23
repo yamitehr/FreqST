@@ -1,0 +1,10 @@
+Stage 1b quantitative side-notes
+
+[1] AC-energy spatial spread = fraction of pixels holding 80% of motion energy
+    (smaller = motion concentrated on a compact region; larger = smeared over frame)
+    vtest (static cam):   FreqST=0.040   TC Reordering=0.039
+    pan+blob clip:        FreqST=0.118   TC Reordering=0.117
+
+[2] Fraction of motion energy landing ON the local blob (pan clip only)
+    (higher = isolates the local object; lower = global pan's bg edges dominate)
+    pan+blob clip:        FreqST=0.053   TC Reordering=0.048
