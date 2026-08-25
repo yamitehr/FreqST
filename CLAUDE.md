@@ -50,20 +50,27 @@ synthetic_data.py                           Gaussian-blob clip generator (genera
 data/vtest.avi                              OpenCV sample clip (Apache-2.0), real pedestrian
                                             footage, static camera — used by stage1b
 experiments/stage1.py                       transform sanity check, synthetic, no training
+                                            → docs/stage1.md
 experiments/stage1b.py                      real-video qualitative check, no training
+                                            → docs/stage1b.md
 experiments/stage3.py                       learnability: tiny CNN, easy+hard regimes,
                                             4 methods (rgb/grayst/tc_reordering/freqst) x
-                                            2 datasets (static/pan)
+                                            2 datasets (static/pan) → docs/stage3.md
 experiments/stage3_verify.py                multi-seed (x3) + temporal-average control,
                                             re-verifies stage3's hard-regime headline result
+                                            → docs/stage3_verify.md
 experiments/stage4_window9.py               fairness check: every method gets the same T=9
                                             window (stage3 gives GrayST/TC only 3 of 8 frames)
+                                            → docs/stage4_window9.md
 experiments/stage4b_grayst_ensemble.py      GrayST as a 3-glimpse train-time-augmented,
                                             test-time-averaged ensemble — tests whether
                                             GrayST just needed to see more of the window
+                                            → docs/stage4b_grayst_ensemble.md
 run_all.sh                                   bash, runs stage1 → stage1b → stage3 →
                                             stage3_verify only
 results/REPORT.md                            full writeup — READ THIS FIRST
+docs/stage*.md                               per-stage deep dives (what/why/findings),
+                                            each links back here — see Stage docs below
 ```
 
 **`run_all.sh` does NOT run stage4 or stage4b.** Run them manually:
@@ -82,6 +89,17 @@ picture.
 and on Windows under Git Bash/WSL, but not in a plain PowerShell/cmd venv (that uses
 `venv\Scripts\activate` instead). Safer cross-OS default: activate your venv however your
 shell needs, then run modules directly from `FreqST/`, e.g. `python -m experiments.stage1`.
+
+## Stage docs
+
+Deep dive per stage — what each script does, why, exact numbers, output files:
+
+- [docs/stage1.md](docs/stage1.md) — transform sanity check (no training)
+- [docs/stage1b.md](docs/stage1b.md) — real-video qualitative check (no training)
+- [docs/stage3.md](docs/stage3.md) — learnability check (headline result)
+- [docs/stage3_verify.md](docs/stage3_verify.md) — multi-seed + span-confound controls
+- [docs/stage4_window9.md](docs/stage4_window9.md) — same-window fairness check
+- [docs/stage4b_grayst_ensemble.md](docs/stage4b_grayst_ensemble.md) — best-effort GrayST control
 
 ## Key results so far (hard regime: dim blob, small model, less data — forces methods apart)
 
