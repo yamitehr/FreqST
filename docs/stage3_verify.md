@@ -39,10 +39,12 @@ FreqST's pan accuracy: **0.903 ± 0.013** across seeds — stable.
 
 ## Output files
 
+**Bar chart, all methods + controls, both datasets, mean ± range over 3 seeds:**
+![pan robustness verify](../results/stage3/verify_pan_robustness.png)
+
 - `results/stage3/verify_metrics.txt` — full table (A static / B pan final / B pan
   best / drop), per-method, mean ± half-range over seeds; plus per-seed FreqST
   final-vs-best breakdown.
-- `results/stage3/verify_pan_robustness.png` — bar chart, all methods, both datasets.
 
 ## Why it matters
 

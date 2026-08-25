@@ -44,7 +44,9 @@ FreqST's 0.875. Frequency structure still earns its keep beyond "use the whole w
 
 ## Output files
 
-- `metrics.txt`, `window9_comparison.png`
+![window9 comparison](../results/stage4_window9/window9_comparison.png)
+
+- `metrics.txt` — full table above
 
 ## Why it matters
 

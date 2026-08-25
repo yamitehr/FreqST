@@ -38,9 +38,15 @@ temporal context per frame against which motion speeds show up in the kept coeff
 
 ## Output files
 
-- `channels_grid.png` — ch0/ch1/ch2 across 3 speeds
-- `transform_comparison.png` — FreqST vs GrayST vs TC Reordering
-- `activation_vs_speed.png` — activation + captured-fraction curves
+**ch0/ch1/ch2 across 3 speeds:**
+![channels grid](../results/stage1/channels_grid.png)
+
+**FreqST vs GrayST vs TC Reordering:**
+![transform comparison](../results/stage1/transform_comparison.png)
+
+**Activation + captured-fraction curves:**
+![activation vs speed](../results/stage1/activation_vs_speed.png)
+
 - `metrics.txt` — raw numbers, monotonicity checks (in-regime vs. full range)
 
 ## Why it matters

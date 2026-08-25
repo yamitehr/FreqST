@@ -48,8 +48,14 @@ static camera. A pan violates exactly that assumption.
 
 ## Output files
 
-- `vtest_comparison.png`, `vtest_channels_grid.png` — static-camera clip
-- `panmotion_comparison.png`, `panmotion_channels_grid.png` — pan clip
+**Static-camera clip (`vtest.avi`):**
+![vtest comparison](../results/stage1b/vtest_comparison.png)
+![vtest channels grid](../results/stage1b/vtest_channels_grid.png)
+
+**Pan-over-real-background clip:**
+![panmotion comparison](../results/stage1b/panmotion_comparison.png)
+![panmotion channels grid](../results/stage1b/panmotion_channels_grid.png)
+
 - `metrics.txt` — spread + blob-energy-fraction numbers
 
 ## Why it matters

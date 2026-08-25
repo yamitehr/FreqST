@@ -43,7 +43,9 @@ left standing is the frequency decomposition itself.
 
 ## Output files
 
-- `metrics.txt`, `ensemble_comparison.png`
+![ensemble comparison](../results/stage4b_grayst_ensemble/ensemble_comparison.png)
+
+- `metrics.txt` — full table above
 
 ## Why it matters
 

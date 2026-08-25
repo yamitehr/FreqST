@@ -56,7 +56,14 @@ here because blob speeds were kept in the resolvable range from Stage 1.
 
 ## Output files
 
-- `easy/{curves,confusion}.png`, `hard/{curves,confusion}.png`
+**Hard regime — training curves and confusion matrices (the headline result):**
+![hard curves](../results/stage3/hard/curves.png)
+![hard confusion](../results/stage3/hard/confusion.png)
+
+**Easy regime — saturates, included for completeness:**
+![easy curves](../results/stage3/easy/curves.png)
+![easy confusion](../results/stage3/easy/confusion.png)
+
 - `metrics.txt` — accuracy table for both regimes + window sweep
 
 ## Fairness caveat
