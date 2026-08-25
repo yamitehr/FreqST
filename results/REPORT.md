@@ -396,6 +396,49 @@ machines becomes important later.
 
 ---
 
+## Stage 4b -- GrayST as a 3-glimpse ensemble
+
+Goal: give GrayST its fairest possible shot, beyond what Stage 4's `chunk_avg`
+control does. `chunk_avg` still blurs its 3 frame-groups together by averaging
+pixels -- not something GrayST itself ever does. This script instead splits the
+9-frame window into 3 non-overlapping, genuine GrayST triplets -- `(0,1,2)`,
+`(3,4,5)`, `(6,7,8)` -- each an unmodified `grayst()` call, no pixel averaging,
+no frame discarding. Training: each clip yields 3 (image, label) pairs (3x
+augmentation). Testing: the 3 glimpses of a clip are each scored by the one
+shared CNN, their softmax outputs averaged, and the argmax of that average is
+the clip's single prediction -- directly comparable to every other method's
+one-prediction-per-clip accuracy. Same clips/seeds as Stage 3/4, hard regime,
+single seed. Not part of `run_all.sh` -- run manually via
+`python -m experiments.stage4b_grayst_ensemble`. Full writeup:
+`docs/stage4b_grayst_ensemble.md`.
+
+**Result** (`results/stage4b_grayst_ensemble/metrics.txt`,
+`ensemble_comparison.png`):
+
+| method | A: static | B: + pan |
+|---|---|---|
+| GrayST (original, last 3 of 9) | 1.000 | 0.280 |
+| Chunk-avg (3 groups averaged, 9 used) | 1.000 | 0.640 |
+| FreqST (9f DCT) | 1.000 | 0.875 |
+| **GrayST 3-glimpse ensemble (this script)** | 1.000 | **0.603** |
+
+**Verdict: even GrayST's best-effort version doesn't close the gap.** Training-time
+augmentation plus test-time ensembling gets GrayST from 0.280 to 0.603 on pan --
+a real improvement, all 9 frames genuinely used now -- but it still trails
+chunk_avg (0.640) and falls well short of FreqST (0.875). This is the strongest of
+the fairness controls: it rules out both "not enough frames" (Stage 4) and "not
+ensembled enough" (this stage) as explanations. What's left standing is the
+frequency decomposition itself.
+
+(Note: `REFERENCE` values for GrayST/Chunk-avg/FreqST in this table are the
+originally-committed Stage 4 numbers, hardcoded in the script rather than
+recomputed on rerun -- see the Stage 4 reproducibility note above for why a fresh
+run drifts slightly; e.g. this session's Stage 4 rerun gave FreqST 0.880 and
+Chunk-avg 0.620 instead of 0.875/0.640. The ensemble row above (0.603) *is* from
+this session's run.)
+
+---
+
 ### Summary across stages
 - **Stage 1:** FreqST's DCT transform behaves exactly as designed (DC=appearance,
   AC=motion), monotonically in a speed range matched to the window length;
@@ -411,6 +454,11 @@ machines becomes important later.
   sees more raw frames -- GrayST/TC ignore extra frames even when handed the
   identical window, and a fairer "use everything, no DCT" control (chunk-avg,
   0.62) still trails FreqST (0.88) by a wide margin.
+- **Stage 4b:** Ruled out the follow-up objection too -- even GrayST's best-effort
+  version (3-glimpse train-time augmentation + test-time softmax averaging, all 9
+  frames genuinely used) only reaches 0.60 on pan, still clearly behind FreqST.
+  The advantage is the frequency decomposition itself, not frame count or
+  ensembling.
 - **Overall:** the idea is worth a real-data test. It is not proven on real
   video, and its advantage is clearest specifically under camera motion --
   the exact case that motivated it.

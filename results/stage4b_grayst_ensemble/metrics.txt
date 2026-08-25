@@ -8,4 +8,4 @@ method                                      A(static)    B(pan)
 GrayST (original, last 3 of 9)                  1.000     0.280
 Chunk-avg (3 groups averaged, 9 used)           1.000     0.640
 FreqST (9f DCT)                                 1.000     0.875
-GrayST 3-glimpse ensemble (this script)         1.000     0.642
+GrayST 3-glimpse ensemble (this script)         1.000     0.603

@@ -80,10 +80,10 @@ python -m experiments.stage4_window9
 python -m experiments.stage4b_grayst_ensemble
 ```
 
-**stage4/stage4b results are not yet folded into `results/REPORT.md`.** They only exist
-as `results/stage4_window9/metrics.txt` and `results/stage4b_grayst_ensemble/metrics.txt`.
-Read those directly, or fold them into the report, before treating REPORT.md as the full
-picture.
+**stage4 and stage4b are both folded into `results/REPORT.md`** now. Note: a stage4
+rerun on a different machine shifted a couple of baseline numbers (RGB, tavg) beyond
+seed noise — see REPORT.md's reproducibility note. `requirements.txt` has no version
+pins, which is the likely cause.
 
 `run_all.sh` assumes a bash-style venv (`venv/bin/activate`) — works as-is on Linux/macOS,
 and on Windows under Git Bash/WSL, but not in a plain PowerShell/cmd venv (that uses
@@ -109,7 +109,7 @@ Deep dive per stage — what each script does, why, exact numbers, output files:
 | Temporal avg (8f, control) | 0.39 | 0.58 |
 | GrayST (3 consecutive frames) | 0.99–1.00 | **0.31–0.32** (collapses) |
 | TC Reordering (3 spread frames) | 1.00 | **0.31** (collapses) |
-| GrayST 3-glimpse ensemble (uses all 9 frames, still raw pixels) | 1.00 | 0.64 |
+| GrayST 3-glimpse ensemble (uses all 9 frames, still raw pixels) | 1.00 | 0.60–0.64 |
 | Chunk-avg (all frames, no DCT) | 1.00 | 0.64 |
 | **FreqST (DCT)** | 1.00 | **0.875–0.90** |
 
@@ -135,16 +135,15 @@ Takeaways, condensed (full reasoning + caveats in REPORT.md):
 
 ## Next steps
 
-1. Fold `stage4_window9` and `stage4b_grayst_ensemble` results into `results/REPORT.md`.
-2. Real-data pilot: FreqST vs. GrayST as the input stub to a pretrained 2D backbone on a
+1. Real-data pilot: FreqST vs. GrayST as the input stub to a pretrained 2D backbone on a
    subset of a real action dataset, ideally one with a camera-motion split. This is the
    recommended bridge before committing to the full CATER study — matches the proposal's
    own "reduced-schedule pilot first" plan. Athena (ssh) is available for this once GPU
    compute is needed.
-3. Get CATER (task 2, 301 classes, static + camera-motion splits) and the TSN/TSM/MVFNet
+2. Get CATER (task 2, 301 classes, static + camera-motion splits) and the TSN/TSM/MVFNet
    training codebase set up — this is the proposal's actual deliverable and hasn't been
    started. ~35GB storage needed.
-4. Optional/exploratory ideas noted in REPORT.md but not yet implemented: a pan-speed
+3. Optional/exploratory ideas noted in REPORT.md but not yet implemented: a pan-speed
    sweep (quantify where the pixel-level separation degrades, not just static-vs-one-pan-
    speed) and motion-compensated FreqST (subtract global flow before the DCT, as a "fixed"
    version for the pan case).
