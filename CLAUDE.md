@@ -100,6 +100,7 @@ Deep dive per stage — what each script does, why, exact numbers, output files:
 - [docs/stage3_verify.md](docs/stage3_verify.md) — multi-seed + span-confound controls
 - [docs/stage4_window9.md](docs/stage4_window9.md) — same-window fairness check
 - [docs/stage4b_grayst_ensemble.md](docs/stage4b_grayst_ensemble.md) — best-effort GrayST control
+- [docs/pilot_plan.md](docs/pilot_plan.md) — **forward-looking**: proposed real-data pilot on CATER cameramotion (not yet run)
 
 Not a stage, but relevant background for Next Step 2 (CATER acquisition):
 
@@ -147,7 +148,9 @@ Takeaways, condensed (full reasoning + caveats in REPORT.md):
    subset of a real action dataset, ideally one with a camera-motion split. This is the
    recommended bridge before committing to the full CATER study — matches the proposal's
    own "reduced-schedule pilot first" plan. Athena (ssh) is available for this once GPU
-   compute is needed.
+   compute is needed. Concrete design (matched-budget 3-way: GrayST-vanilla / GrayST-W8 /
+   FreqST-N12 on CATER cameramotion, TSN-R50 backbone, single seed) in
+   [docs/pilot_plan.md](docs/pilot_plan.md).
 2. Get CATER (task 2, 301 classes, static + camera-motion splits) and the TSN/TSM/MVFNet
    training codebase set up — this is the proposal's actual deliverable and hasn't been
    started. ~35GB storage needed.
