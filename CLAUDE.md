@@ -148,8 +148,9 @@ Takeaways, condensed (full reasoning + caveats in REPORT.md):
    subset of a real action dataset, ideally one with a camera-motion split. This is the
    recommended bridge before committing to the full CATER study — matches the proposal's
    own "reduced-schedule pilot first" plan. Athena (ssh) is available for this once GPU
-   compute is needed. Concrete design (matched-budget 3-way: GrayST-vanilla / GrayST-W6 /
-   FreqST-N16 on CATER cameramotion, TSN-R50 backbone, single seed) in
+   compute is needed. Concrete design (train FreqST-N16 at matched 96-frame budget
+   on full CATER cameramotion, TSN-R50 backbone, single seed; compare directly to
+   Kim et al.'s published GrayST mAP without re-training GrayST) in
    [docs/pilot_plan.md](docs/pilot_plan.md).
 2. Get CATER (task 2, 301 classes, static + camera-motion splits) and the TSN/TSM/MVFNet
    training codebase set up — this is the proposal's actual deliverable and hasn't been

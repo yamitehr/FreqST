@@ -1,20 +1,21 @@
-# Pilot plan — FreqST vs GrayST on CATER (proposed, not yet run)
+# Pilot plan — FreqST on CATER (proposed, not yet run)
 
 Not a stage — a forward-looking design doc for the first real-data experiment. Back to [CLAUDE.md](../CLAUDE.md).
 
 ## Purpose
 
 Bridge between the synthetic CPU prototype (Stages 1–4b) and the proposal's full CATER
-study. Answer one specific question, cheaply:
+study. Answer one specific question:
 
-> Under a fair frame-budget comparison, does FreqST beat GrayST on CATER's
-> camera-motion split when both are plugged into the same pretrained 2D backbone?
+> With a raw-frame budget matched to GrayST, does FreqST beat Kim et al.'s published
+> GrayST numbers on CATER's camera-motion split, using the same pretrained 2D backbone
+> and the same training protocol?
 
 Positive → green light for the full CATER + TSN/TSM/MVFNet study.
 Negative → the synthetic-blob pan-robustness result did not transfer, and the paper's
-scope narrows before we spend the GPU budget.
+scope narrows before we spend more GPU budget.
 
-## Dataset — CATER task 2 (cameramotion split), subset
+## Dataset — CATER task 2 (cameramotion split), full
 
 **Why CATER, not SSv2/Kinetics.** It's the only common benchmark that ships an explicit
 static-camera vs moving-camera split of the same task — exactly the setting FreqST is
@@ -24,18 +25,17 @@ designed for. SSv2 has no such split so it can't test the hypothesis.
 compositional actions, mAP). We use it directly so the pilot rehearses the deliverable's
 evaluation.
 
-**Subset for pilot** (full CATER is ~3500 train / ~2000 test; too heavy for a pilot):
+**Full CATER, not a subset.** Kim et al.'s published GrayST numbers are trained on full
+CATER (~3500 train / ~2000 test). To compare our FreqST number directly against theirs
+without a data-size caveat, we train FreqST on the same full data. Storage: ~35 GB.
 
-| set | clips | notes |
-|---|---|---|
-| Train | ~1000 | balanced coverage over the 301 compositional classes |
-| Val | ~200 | held out, used for observation only |
-| Test | ~500 | frozen, evaluated once |
-
-Same subset composition for the cameramotion split; a static-camera subset run comes
-later once the cameramotion result is in.
+Static-camera split comes later once the cameramotion result is in.
 
 ## Protocol — match Kim et al. exactly (verified from `third_party/channel_sampling/`)
+
+Every training-time choice matches Kim et al.'s CATER recipe, so any performance
+difference is attributable to the input stub (FreqST vs GrayST), not to schedule or
+augmentation drift.
 
 **Sampling.** CATER uses DENSE sampling in their code, not sparse TSN.
 `input_frame_length = 32` (CNN inputs per clip); dense recipe: 32 frames × stride 8.
@@ -52,108 +52,120 @@ SSv2 — CATER's `val_num_spatial_crops = 1`, `val_num_ensemble_views = 1`).
 best-epoch selection, no early stopping on metric — matches Kim et al. and matches
 Stage 3's own reporting rule.
 
-**Reference numbers to beat** (Kim et al. Table 1, cameramotion / mAP):
+**Baseline reference numbers** (Kim et al. Table 1, cameramotion / mAP):
 
 | backbone | GrayST cameramotion mAP |
 |---|---|
 | TSN | 61.9 |
 | TRN | 57.6 |
-| TSM | 74.7 |
+| **TSM** | **74.7** |
 | MVFNet | 67.8 |
 
-GrayST is SOTA on cameramotion across all four backbones. TSM is best; TSN is cleanest
-for pilot (see backbone choice below).
+GrayST is SOTA on cameramotion across all four backbones. TSM has the highest number;
+TSN is the cleanest backbone for isolating the input-stub effect (see below).
 
-## Methods to compare — matched frame budget
+## Method — FreqST-N16 at matched raw-frame budget
 
-The key design decision. FreqST's default recipe would ingest 32 × 8 = 256 raw frames
+The one design decision. FreqST's natural recipe would ingest 32 × 8 = 256 raw frames
 per clip vs GrayST's 32 × 3 = 96 — a 2.7× temporal-coverage advantage that makes any
 positive FreqST result uninterpretable ("did the DCT win, or did FreqST just see more
 of the video?").
 
-**Fix: cap FreqST at GrayST's 96-frame budget.** FreqST then produces fewer CNN inputs
-(N=16 instead of 32), which is still a *handicap* — less TSN consensus at test time.
-If FreqST still wins under this handicap, that's a stronger result than a matched-N run.
+**Fix: cap FreqST at GrayST's 96-frame budget.** With `N × W = 96` fixed:
 
-**Why W=6 (not W=8).** With `N × W = 96` fixed, picking W=6 gives N=16 anchors;
-picking W=8 gives N=12. N=16 is a milder TSN-consensus handicap (2× fewer votes than
-GrayST vs 2.7× for N=12) at negligible cost to the transform: a length-6 DCT still
-splits DC from 2 low AC bins (we keep 3 of 6 bins = 50% of the spectrum, vs 3 of 8
-= 37.5% for W=8). CATER's object motion (slide / contain / pick-place over multiple
-seconds at 24 fps) sits well within the low-frequency band either way; the Stage 1
-"speed vs kept-AC-energy" curve narrows slightly for W=6 but doesn't cross into
-CATER-relevant motion speeds.
-
-Three methods, all at 96 raw frames per clip:
-
-| method | frames/clip | CNN inputs/clip | window per anchor | tests |
+| FreqST config | anchors N | window W | CNN inputs/clip | handicap vs GrayST |
 |---|---|---|---|---|
-| **GrayST-vanilla** (baseline reference) | 96 | 32 | 3 grays spread across the whole clip | published baseline |
-| **GrayST-W6** (representation control) | 96 | 32 | 3 grays sampled within a 6-frame window around anchor | isolates *representation* — same window, same budget, DCT vs raw pixels |
-| **FreqST-N16** (ours, matched budget) | 96 | **16** | 6 consecutive → DCT → DC + 2 low AC | matched raw-frame budget, at a 2× CNN-input handicap |
+| **N=16, W=6 (chosen)** | 16 | 6 | 16 | 2× fewer TSN votes |
+| N=12, W=8 | 12 | 8 | 12 | 2.7× fewer TSN votes |
+| N=32, W=3 (degenerate — don't) | 32 | 3 | 32 | none, but only 3 DCT bins total |
 
-The GrayST-W6 control is the important one. It matches FreqST's *window* (6-frame
-region per anchor) AND its *frame budget* (96), differing only in representation:
-GrayST-W6 keeps raw grayscale pixels; FreqST does the 1D DCT along time. If
-FreqST beats GrayST-W6, the DCT itself is doing real work — which is exactly the
-claim the report defends synthetically (see [stage4b](stage4b_grayst_ensemble.md)) but
-has not been tested on real video.
+N=16, W=6 gives the mildest TSN-consensus handicap at negligible cost to the transform:
+a length-6 DCT still splits DC from 2 low AC bins (we keep 3 of 6 bins = 50% of the
+spectrum, vs 3 of 8 = 37.5% for W=8). CATER's slow object motion (slide / contain /
+pick-place over multiple seconds at 24 fps) sits well within the low-frequency band
+either way; Stage 1's "speed vs kept-AC-energy" curve narrows slightly for W=6 but
+doesn't cross into CATER-relevant motion speeds.
 
-**Deferred (add only if the above is positive):**
-- FreqST-N32 at 192 frames (W=6) or 256 frames (W=8) — "extra frames help too, on top of the win."
-- TCPlus2 and TC Reordering baselines — Kim et al. also compared against these.
-- Static-camera CATER split — repeat the whole pilot on it for the second half of
-  the paper's table.
+**FreqST-N16 details:**
+- 16 anchors per clip, TSN-sampled from 16 equal segments (~15 raw frames each at
+  CATER's ~240-frame clip length).
+- For each anchor, take 6 consecutive raw grayscale frames around it.
+- 1D DCT along time per pixel over the 6-frame window; keep coefficients 0, 1, 2 as
+  R, G, B → one 3-channel tensor per anchor.
+- Feed 16 3-channel tensors to the backbone; average logits (TSN consensus).
+- **Raw frames loaded per clip: 96** — matches GrayST exactly.
+
+**Comparison: direct to paper's published numbers.** No GrayST re-training. Our
+FreqST-N16 mAP against Kim et al.'s reported GrayST mAP for the same backbone.
 
 ## Backbone choice
 
-**TSN-ResNet-50 (ImageNet-pretrained) for the primary comparison.** TSM's temporal-shift
-module already encodes temporal information in-network; combining it with FreqST's
-already-encoded temporal representation risks double-counting or destructive
-interference. TSN is the cleaner isolation of the input-stub effect. TSM/MVFNet come
-later as secondary comparisons if the TSN result is positive.
+**Primary: TSN-ResNet-50 (ImageNet-pretrained).** TSM's temporal-shift module already
+encodes temporal information in-network; combining it with FreqST's already-encoded
+temporal representation risks double-counting or destructive interference. TSN is the
+cleaner isolation of the input-stub effect.
+
+**Secondary: TSM-ResNet-50.** If TSN wins, run TSM too — TSM+GrayST is Kim et al.'s
+highest reported number (74.7 mAP), so beating it is the strongest headline the paper
+could carry. If FreqST underperforms TSM+GrayST despite winning at TSN, that's still
+informative (it suggests FreqST's advantage is complementary to raw-pixel methods but
+not to temporal-shift-augmented ones).
 
 ## Reporting
 
-- **Single seed per method** for the pilot — cheapest scoping that still answers the
-  branching decision. Multi-seed verification is deferred to the full-CATER stage,
-  where a 3-way seed ablation matters for the paper.
-- Paired significance test on per-clip predictions (McNemar or bootstrap CI on the
-  500-clip test set). This is the only within-pilot noise signal we get; mAP
-  differences of ~1-2 points on 500 clips are within resampling noise, so a p-value
-  is worth reporting alongside the raw number.
-- Also record wall-clock training + inference time per method (DCT compute cost).
+- **Single seed.** Multi-seed verification is deferred to the full-CATER stage once we
+  know FreqST is worth the compute.
+- Wall-clock training + inference time per run (DCT compute cost, to preempt reviewer
+  questions).
+- All hyperparameters logged; any deviation from Kim et al.'s recipe called out
+  explicitly.
+
+## Caveats to acknowledge in the paper
+
+Skipping GrayST re-training saves compute but has two costs worth being upfront about:
+
+1. **No implementation-verification baseline.** If our pipeline diverges from Kim
+   et al.'s in some silent way (dataloader quirk, augmentation implementation), we
+   can't detect it by comparing our-GrayST to their-GrayST. Mitigation: build the
+   pipeline as a thin FreqST-adapter around Kim et al.'s own PyVideoAI code
+   (`third_party/channel_sampling/`), so almost every non-transform code path is
+   theirs, not ours.
+2. **Windowing-vs-representation confound.** FreqST-N16 differs from GrayST on two
+   axes at once: window shape (6 contiguous vs 3 spread) and representation
+   (DCT vs raw pixels). If FreqST wins, we can't cleanly attribute the win to the
+   DCT specifically. Stage 4b provides synthetic evidence that the DCT does work
+   beyond frame count, but a real-data GrayST-W6 control would be the direct
+   analog. Add as a follow-up experiment if the pilot result is promising and
+   reviewers push back.
 
 ## Total pilot cost
 
-- 3 methods × 1 seed = **3 training runs** on the cameramotion subset.
-- Estimated ~1-2 GPU-hours per run on Athena (subset scale, ResNet-50).
-- **~3-6 GPU-hours total**, comfortably one workday on a single GPU.
+- **1 training run per backbone** (start: TSN-R50; optional: TSM-R50, MVFNet-R50).
+- Full-CATER scale — much heavier than a subset. Rough estimate: 12–36 GPU-hours per
+  run on Athena depending on backbone, throughput, and how many epochs to plateau.
+- **Total: 12–36 GPU-hours for TSN-only, up to ~100 for all four backbones.**
 
 ## Success criteria — decide next step from these outcomes
 
-| outcome | interpretation | next step |
+| outcome (TSN-R50, cameramotion mAP) | interpretation | next step |
 |---|---|---|
-| FreqST-N16 > GrayST-W6 > GrayST-vanilla | Best case: DCT wins on representation alone at a CNN-input handicap. | Run FreqST-N32 to confirm the extra frames also help, then commit to full CATER. |
-| FreqST-N16 > GrayST-vanilla, ≈ GrayST-W6 | DCT is not doing extra work over raw pixels at matched window — the "advantage" is just window size. | Narrow the paper's claim, position FreqST as a way to get wider windows into a 3-channel input. Skip full CATER unless a stronger reformulation surfaces. |
-| FreqST-N16 ≈ GrayST-vanilla | Frame budget was the whole story on the synthetic result. | Kill the pan-robustness claim. Investigate why synthetic result didn't transfer. |
-| FreqST-N16 < GrayST-vanilla | FreqST is actively worse on real video. | Diagnose (implementation? DCT window mismatched to CATER's motion scale?) before writing anything. |
+| FreqST-N16 > GrayST 61.9 by a clear margin (≥3 pts) | Method transfers to real video at matched budget. | Run TSM and MVFNet backbones; then run static-camera split; then start writing. |
+| FreqST-N16 ≈ GrayST 61.9 (within ±2 pts) | Ambiguous — could be method noise or a genuine tie. | Add multi-seed (3×) TSN runs before deciding. If still tied, run GrayST-W6 control to isolate windowing vs representation. |
+| FreqST-N16 < GrayST 61.9 by a clear margin (≤−3 pts) | FreqST is worse on real video despite the synthetic story. | Diagnose before writing: is it a pipeline bug (does our GrayST-vanilla reproduce 61.9)? is W=6 too narrow for CATER motion? Is the DCT window mismatched to object-motion timescales? |
 
 ## Setup work not yet started
 
-- Download CATER task 2 (~35GB) to Athena.
+- Download CATER task 2 (~35 GB) to Athena.
 - Extract to per-frame JPEGs following Kim et al.'s pipeline (their
   `submodules/video_datasets_api/tools/` scripts — the two nested submodules are
   currently NOT initialized in our vendored copy of `third_party/channel_sampling/`
   because the sandbox blocked recursive submodule init).
 - Wire our `freqst()` transform (from `transforms.py`) into PyVideoAI as a new
-  sampling mode alongside `RGB / TC / GreyST / TCPlus2`.
-- Implement the GrayST-W6 sampling variant (~20-line edit to the sparse-sample
-  dataset's frame-index function).
-- Add a paired-significance-test utility for per-clip mAP.
+  sampling mode alongside `RGB / TC / GreyST / TCPlus2`. Sample N=16 anchors × W=6
+  consecutive frames per anchor.
 
 ## Related docs
 
 - [Stage 3](stage3.md) — synthetic learnability result FreqST is trying to reproduce on real data.
-- [Stage 3 verify](stage3_verify.md) — the multi-seed + span-confound protocol this pilot mirrors.
-- [Stage 4b](stage4b_grayst_ensemble.md) — the synthetic-side control that says the DCT is doing work beyond frame count. GrayST-W6 in this pilot is its real-data analog.
+- [Stage 3 verify](stage3_verify.md) — multi-seed + span-confound protocol; the format the full-CATER stage will follow.
+- [Stage 4b](stage4b_grayst_ensemble.md) — the synthetic-side control that argues the DCT does work beyond frame count. Its real-data analog (GrayST-W6) is deferred here.
