@@ -101,6 +101,14 @@ Deep dive per stage — what each script does, why, exact numbers, output files:
 - [docs/stage4_window9.md](docs/stage4_window9.md) — same-window fairness check
 - [docs/stage4b_grayst_ensemble.md](docs/stage4b_grayst_ensemble.md) — best-effort GrayST control
 
+Not a stage, but relevant background for Next Step 2 (CATER acquisition):
+
+- [knowledge_base/CATER (paper).md](knowledge_base/CATER%20%28paper%29.md) — notes on
+  Girdhar & Ramanan, ICLR 2020, the dataset the proposal targets. Task 2 (compositional,
+  301 classes) + camera-motion split is the real-data test of this project's headline
+  synthetic result. Full paper markdown/figures/metadata under `relevant papers/CATER/`
+  (PDF itself gitignored, kept local only).
+
 ## Key results so far (hard regime: dim blob, small model, less data — forces methods apart)
 
 | method | static (A) | +camera pan (B) |
