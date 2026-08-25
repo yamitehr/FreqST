@@ -19,8 +19,13 @@
 # Post-conditions (on success):
 #   $DATA_ROOT/
 #     downloads/                          <- zip cache (safe to delete after extract)
-#     max2action/{videos,scenes,lists}/
+#     max2action/{videos,scenes,lists}/    <- created by each zip's own top-level prefix
 #     max2action_cameramotion/{videos,scenes,lists}/
+#
+# Note on extract layout: each zip ships with its own top-level directory
+# (videos/, scenes/, or lists/), so we extract into $DATA_ROOT/<variant>/ and let
+# the zip's structure create the component subdir. Per-component sentinels go in
+# $DATA_ROOT/<variant>/.<component>_done to keep the script idempotent.
 #
 # Next step after this script: extract per-clip JPEG frames from each variant's
 # videos/*.avi (Kim et al.'s pipeline expects 300 JPEGs/clip), then run
@@ -54,9 +59,11 @@ download_and_extract() {
   local url="$3"
 
   local zip_path="$DOWNLOAD_DIR/${variant}_${component}.zip"
-  local extract_dir="$DATA_ROOT/$variant/$component"
+  local variant_dir="$DATA_ROOT/$variant"
+  local sentinel="$variant_dir/.${component}_done"
+  local expected_dir="$variant_dir/$component"
 
-  if [ -f "$extract_dir/.done" ]; then
+  if [ -f "$sentinel" ]; then
     echo "[skip]     $variant/$component (already extracted)"
     return 0
   fi
@@ -65,11 +72,17 @@ download_and_extract() {
   echo "           <- $url"
   curl -L -C - --fail --retry 3 --retry-delay 5 -o "$zip_path" "$url"
 
-  echo "[extract]  $variant/$component -> $extract_dir"
-  mkdir -p "$extract_dir"
-  unzip -q -o "$zip_path" -d "$extract_dir"
-  touch "$extract_dir/.done"
+  echo "[extract]  $variant/$component -> $variant_dir/  (zip's own $component/ prefix creates the subdir)"
+  mkdir -p "$variant_dir"
+  unzip -q -o "$zip_path" -d "$variant_dir"
 
+  if [ ! -d "$expected_dir" ]; then
+    echo "[ERROR]    Expected $expected_dir after extract, not found."
+    echo "           Zip layout may have changed upstream; inspect $zip_path manually."
+    return 1
+  fi
+
+  touch "$sentinel"
   echo
 }
 
@@ -89,17 +102,16 @@ echo
 echo "Disk usage:"
 du -sh "$DATA_ROOT"/* 2>/dev/null | sort -k2
 echo
-echo "Verify train/val split files:"
+echo "Verify train/val split files (task 2 = actions_order_uniq, task 1 = actions_present):"
 for variant in max2action max2action_cameramotion; do
-  for split in train val; do
-    for task_dir in actions_order_uniq actions_present; do
-      # zip layout may nest one level; search a couple of common paths.
-      found=$(find "$DATA_ROOT/$variant/lists" -maxdepth 3 -name "${split}.txt" -path "*${task_dir}*" 2>/dev/null | head -1)
-      if [ -n "$found" ]; then
-        n_lines=$(wc -l < "$found")
-        printf "  %-28s %-20s %-6s -> %s (%s lines)\n" "$variant" "$task_dir" "$split" "$found" "$n_lines"
+  for task_dir in actions_order_uniq actions_present; do
+    for split in train val; do
+      path="$DATA_ROOT/$variant/lists/$task_dir/${split}.txt"
+      if [ -f "$path" ]; then
+        n_lines=$(wc -l < "$path")
+        printf "  %-28s %-20s %-6s -> %s lines\n" "$variant" "$task_dir" "$split" "$n_lines"
       else
-        printf "  %-28s %-20s %-6s -> MISSING\n" "$variant" "$task_dir" "$split"
+        printf "  %-28s %-20s %-6s -> MISSING (%s)\n" "$variant" "$task_dir" "$split" "$path"
       fi
     done
   done

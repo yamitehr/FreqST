@@ -26,8 +26,11 @@ compositional actions, mAP). We use it directly so the pilot rehearses the deliv
 evaluation.
 
 **Full CATER, not a subset.** Kim et al.'s published GrayST numbers are trained on full
-CATER (~3500 train / ~2000 test). To compare our FreqST number directly against theirs
-without a data-size caveat, we train FreqST on the same full data. Storage: ~35 GB.
+CATER (**3849 train / 1651 val**, verified from the extracted lists via
+`scripts/download_cater.sh`). CATER ships no separate test split; the paper reports
+last-epoch val mAP as its test metric, and we match. To compare our FreqST number
+directly against theirs without a data-size caveat, we train FreqST on the same full
+data. Storage: ~35 GB.
 
 Static-camera split comes later once the cameramotion result is in.
 
