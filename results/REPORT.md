@@ -351,6 +351,51 @@ split. Everything here is a green light for that test, not a substitute for it.
 
 ---
 
+## Stage 4 -- same-window fairness check
+
+Goal: close off the fairness caveat flagged above. Stage 3 gives every method the
+same WINDOW=8 span, but GrayST and TC Reordering only ever read 3 of those 8 raw
+frames (see `transforms.py`) -- so "same window" and "same amount of frame content
+consumed" are not the same thing. This script hands every method the literal same
+T=9 window and asks what each one does with it. Adds one new control, `chunk_avg`:
+split the 9 frames into 3 contiguous groups, average each group into one channel --
+every frame contributes, nothing discarded, but still no frequency decomposition
+(isolates "uses the whole window" from "uses a DCT"). Same underlying clips as
+Stage 3's hard regime (identical `build_dataset` seeds), just re-sliced to 9 frames,
+single seed. Not part of `run_all.sh` -- run manually via
+`python -m experiments.stage4_window9`. Full writeup: `docs/stage4_window9.md`.
+
+**Result** (`results/stage4_window9/metrics.txt`, `window9_comparison.png`):
+
+| method | frames used | A: static | B: + pan | drop A->B |
+|---|---|---|---|---|
+| RGB (1 frame, window ignored) | 1 of 9 | 0.282 | 0.230 | 0.052 |
+| GrayST (3f of 9, consecutive) | 3 of 9 (6 discarded) | 1.000 | 0.275 | 0.725 |
+| TC Reordering (3f of 9, spread) | 3 of 9 (6 discarded) | 1.000 | 0.282 | 0.718 |
+| Chunk-avg (3 groups of 9, none dropped) | 9 of 9 | 1.000 | 0.620 | 0.380 |
+| Temporal avg (9f) | 9 of 9 | 0.485 | 0.515 | -0.030 |
+| **FreqST (9f DCT)** | 9 of 9 | 1.000 | **0.880** | 0.120 |
+
+**Verdict: the fairness objection doesn't hold up.** GrayST and TC Reordering are
+completely unaffected by having 6 extra frames sitting right there in the window --
+they still only look at 3, because that's how those methods are defined, not because
+they were starved of data in Stage 3. Chunk-avg (uses everything, no DCT) climbs to
+0.620 on pan -- better than raw stacking, confirming "use the whole window" helps on
+its own -- but still well short of FreqST's 0.880. The DCT is doing real work beyond
+just aggregating more frames.
+
+Note on reproducibility: re-running this on a different machine (Windows/CPU, this
+session) than the original results shifted a couple of numbers noticeably --
+RGB (0.242->0.282 static, no real signal either way, both ~chance) and Temporal avg
+(0.335->0.485 static) moved by more than seed noise alone would suggest, likely
+library/BLAS-version differences affecting the untrained/lightly-trained baselines
+most. The methods that matter for the headline claim (GrayST/TC collapsing, FreqST
+holding at ~0.88) reproduced closely. Worth pinning package versions
+(`requirements.txt` currently has no version pins) if exact reproducibility across
+machines becomes important later.
+
+---
+
 ### Summary across stages
 - **Stage 1:** FreqST's DCT transform behaves exactly as designed (DC=appearance,
   AC=motion), monotonically in a speed range matched to the window length;
@@ -362,6 +407,10 @@ split. Everything here is a green light for that test, not a substitute for it.
   GrayST on a static-camera classification task and *much* more robust to a
   camera-pan nuisance (0.90 vs ~0.31), thanks to temporal integration plus
   frequency structure. Verified across seeds with a temporal-average control.
+- **Stage 4:** Ruled out the fairness objection that FreqST wins only because it
+  sees more raw frames -- GrayST/TC ignore extra frames even when handed the
+  identical window, and a fairer "use everything, no DCT" control (chunk-avg,
+  0.62) still trails FreqST (0.88) by a wide margin.
 - **Overall:** the idea is worth a real-data test. It is not proven on real
   video, and its advantage is clearest specifically under camera motion --
   the exact case that motivated it.
