@@ -72,26 +72,35 @@ positive FreqST result uninterpretable ("did the DCT win, or did FreqST just see
 of the video?").
 
 **Fix: cap FreqST at GrayST's 96-frame budget.** FreqST then produces fewer CNN inputs
-(N=12 instead of 32), which is a *handicap* — less TSN consensus at test time. If
-FreqST still wins under this handicap, that's a stronger result than a matched-N run.
+(N=16 instead of 32), which is still a *handicap* — less TSN consensus at test time.
+If FreqST still wins under this handicap, that's a stronger result than a matched-N run.
+
+**Why W=6 (not W=8).** With `N × W = 96` fixed, picking W=6 gives N=16 anchors;
+picking W=8 gives N=12. N=16 is a milder TSN-consensus handicap (2× fewer votes than
+GrayST vs 2.7× for N=12) at negligible cost to the transform: a length-6 DCT still
+splits DC from 2 low AC bins (we keep 3 of 6 bins = 50% of the spectrum, vs 3 of 8
+= 37.5% for W=8). CATER's object motion (slide / contain / pick-place over multiple
+seconds at 24 fps) sits well within the low-frequency band either way; the Stage 1
+"speed vs kept-AC-energy" curve narrows slightly for W=6 but doesn't cross into
+CATER-relevant motion speeds.
 
 Three methods, all at 96 raw frames per clip:
 
 | method | frames/clip | CNN inputs/clip | window per anchor | tests |
 |---|---|---|---|---|
 | **GrayST-vanilla** (baseline reference) | 96 | 32 | 3 grays spread across the whole clip | published baseline |
-| **GrayST-W8** (representation control) | 96 | 32 | 3 grays sampled within an 8-frame window around anchor | isolates *representation* — same window, same budget, DCT vs raw pixels |
-| **FreqST-N12** (ours, matched budget) | 96 | **12** | 8 consecutive → DCT → DC + 2 low AC | matched raw-frame budget, at a CNN-input disadvantage |
+| **GrayST-W6** (representation control) | 96 | 32 | 3 grays sampled within a 6-frame window around anchor | isolates *representation* — same window, same budget, DCT vs raw pixels |
+| **FreqST-N16** (ours, matched budget) | 96 | **16** | 6 consecutive → DCT → DC + 2 low AC | matched raw-frame budget, at a 2× CNN-input handicap |
 
-The GrayST-W8 control is the important one. It matches FreqST's *window* (8-frame
+The GrayST-W6 control is the important one. It matches FreqST's *window* (6-frame
 region per anchor) AND its *frame budget* (96), differing only in representation:
-GrayST-W8 keeps raw grayscale pixels; FreqST does the 1D DCT along time. If
-FreqST beats GrayST-W8, the DCT itself is doing real work — which is exactly the
+GrayST-W6 keeps raw grayscale pixels; FreqST does the 1D DCT along time. If
+FreqST beats GrayST-W6, the DCT itself is doing real work — which is exactly the
 claim the report defends synthetically (see [stage4b](stage4b_grayst_ensemble.md)) but
 has not been tested on real video.
 
 **Deferred (add only if the above is positive):**
-- FreqST-N32 at 256 frames — "extra frames help too, on top of the win."
+- FreqST-N32 at 192 frames (W=6) or 256 frames (W=8) — "extra frames help too, on top of the win."
 - TCPlus2 and TC Reordering baselines — Kim et al. also compared against these.
 - Static-camera CATER split — repeat the whole pilot on it for the second half of
   the paper's table.
@@ -125,10 +134,10 @@ later as secondary comparisons if the TSN result is positive.
 
 | outcome | interpretation | next step |
 |---|---|---|
-| FreqST-N12 > GrayST-W8 > GrayST-vanilla | Best case: DCT wins on representation alone at a CNN-input handicap. | Run FreqST-N32 to confirm the extra frames also help, then commit to full CATER. |
-| FreqST-N12 > GrayST-vanilla, ≈ GrayST-W8 | DCT is not doing extra work over raw pixels at matched window — the "advantage" is just window size. | Narrow the paper's claim, position FreqST as a way to get wider windows into a 3-channel input. Skip full CATER unless a stronger reformulation surfaces. |
-| FreqST-N12 ≈ GrayST-vanilla | Frame budget was the whole story on the synthetic result. | Kill the pan-robustness claim. Investigate why synthetic result didn't transfer. |
-| FreqST-N12 < GrayST-vanilla | FreqST is actively worse on real video. | Diagnose (implementation? DCT window mismatched to CATER's motion scale?) before writing anything. |
+| FreqST-N16 > GrayST-W6 > GrayST-vanilla | Best case: DCT wins on representation alone at a CNN-input handicap. | Run FreqST-N32 to confirm the extra frames also help, then commit to full CATER. |
+| FreqST-N16 > GrayST-vanilla, ≈ GrayST-W6 | DCT is not doing extra work over raw pixels at matched window — the "advantage" is just window size. | Narrow the paper's claim, position FreqST as a way to get wider windows into a 3-channel input. Skip full CATER unless a stronger reformulation surfaces. |
+| FreqST-N16 ≈ GrayST-vanilla | Frame budget was the whole story on the synthetic result. | Kill the pan-robustness claim. Investigate why synthetic result didn't transfer. |
+| FreqST-N16 < GrayST-vanilla | FreqST is actively worse on real video. | Diagnose (implementation? DCT window mismatched to CATER's motion scale?) before writing anything. |
 
 ## Setup work not yet started
 
@@ -139,7 +148,7 @@ later as secondary comparisons if the TSN result is positive.
   because the sandbox blocked recursive submodule init).
 - Wire our `freqst()` transform (from `transforms.py`) into PyVideoAI as a new
   sampling mode alongside `RGB / TC / GreyST / TCPlus2`.
-- Implement the GrayST-W8 sampling variant (~20-line edit to the sparse-sample
+- Implement the GrayST-W6 sampling variant (~20-line edit to the sparse-sample
   dataset's frame-index function).
 - Add a paired-significance-test utility for per-clip mAP.
 
@@ -147,4 +156,4 @@ later as secondary comparisons if the TSN result is positive.
 
 - [Stage 3](stage3.md) — synthetic learnability result FreqST is trying to reproduce on real data.
 - [Stage 3 verify](stage3_verify.md) — the multi-seed + span-confound protocol this pilot mirrors.
-- [Stage 4b](stage4b_grayst_ensemble.md) — the synthetic-side control that says the DCT is doing work beyond frame count. GrayST-W8 in this pilot is its real-data analog.
+- [Stage 4b](stage4b_grayst_ensemble.md) — the synthetic-side control that says the DCT is doing work beyond frame count. GrayST-W6 in this pilot is its real-data analog.
