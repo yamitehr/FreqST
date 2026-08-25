@@ -3,6 +3,9 @@ __pycache__/
 *.pyc
 .DS_Store
 
+# heavy paper PDFs — keep on disk, don't track
+*.pdf
+
 # Model checkpoints / weights
 *.pt
 *.pth
