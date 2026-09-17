@@ -1,0 +1,1 @@
+1. We are planning on evaluating our work with the CATER dataset. The problem is that our method is designed  to separate camera motion from actual object motion, but in CATER the camera doesn't actually move — it jumps to a new position every 30 frames. So within each window of frames, the camera is mostly static
