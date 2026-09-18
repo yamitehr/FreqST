@@ -23,24 +23,24 @@ Backbone: TSN-ResNet-50 (pretrained on ImageNet) for all three.
 
 ## Phase 1: Infrastructure Setup
 
-- [ ] **1.1** Initialize the channel_sampling submodule
+- [V] **1.1** Initialize the channel_sampling submodule
   - Run: `git submodule update --init`
   - This pulls Kim et al.'s code into `third_party/channel_sampling/`
   - Verify: the folder is no longer empty
 
-- [ ] **1.2** Explore the channel_sampling codebase
+- [V] **1.2** Explore the channel_sampling codebase
   - Understand the folder structure
   - Find the main training script
   - Find where preprocessing (GrayST/RGB) is applied
   - Find configuration files (how do you choose GrayST vs RGB?)
 
-- [ ] **1.3** Set up the Azure VM environment
+- [V] **1.3** Set up the Azure VM environment
   - Confirm GPU is available and working (`nvidia-smi`)
   - Install/verify PyTorch with CUDA support
   - Install dependencies from channel_sampling's requirements
   - Clone/copy the repo to the VM
 
-- [ ] **1.4** Download Diving48 dataset to Azure VM
+- [V - almost done, out of storage] **1.4** Download Diving48 dataset to Azure VM
   - Download videos (~10 GB)
   - Extract to per-frame JPEGs (using ffmpeg or provided scripts)
   - Download and set up train/test split annotation files
